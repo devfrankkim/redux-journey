@@ -1,45 +1,70 @@
-
+import { render } from "@testing-library/react";
 import { createStore } from "redux";
-const add = document.getElementById("add");
-const minus = document.getElementById("minus");
-const number = document.querySelector("span");
 
-number.innerText = 0;
+const form = document.querySelector("form");
+const input = document.querySelector("input");
+const ul = document.querySelector("ul");
 
-const ADD = "ADD";
-const MINUS = "MINUS";
+// const STATE = [];
+// console.log(STATE);
 
-const countModifier = (count = 0, action) => {
+const ADD_TO_DO = "ADD_TO_DO";
+const DELETE_TO_DO = "DELETE_TO_DO";
+
+const addToDoActionActionCreator = (text) => {
+  return { type: ADD_TO_DO, value: text };
+};
+
+const toDoReducer = (state = [], action) => {
   switch (action.type) {
-    case ADD:
-      return count + 1;
-    case MINUS:
-      return count - 1;
+    case ADD_TO_DO:
+      return [...state, { value: action.value, id: new Date().getTime() }];
+    case DELETE_TO_DO:
+      return state.filter((item) => item.id !== action.id);
     default:
-      return count;
+      return state;
+  }
+};
+const toDoStore = createStore(toDoReducer);
+
+const deleteToDo = (id) => {
+  toDoStore.dispatch({ type: DELETE_TO_DO, id });
+};
+
+const addToDo = () => {
+  toDoStore.dispatch(addToDoActionActionCreator(input.value));
+};
+
+const paintToDo = () => {
+  const DATA = toDoStore.getState();
+  // console.log(toDoStore.getState());
+
+  console.log(DATA);
+  ul.innerHTML = "";
+  for (let i = 0; i < DATA.length; i++) {
+    let divElement = document.createElement("div");
+    let listElement = document.createElement("li");
+    let deleteButton = document.createElement("button");
+
+    listElement.id = DATA[i].id;
+    listElement.innerText = DATA[i].value;
+    deleteButton.innerText = "X";
+
+    deleteButton.addEventListener("click", () => deleteToDo(DATA[i].id));
+
+    divElement.appendChild(listElement);
+    divElement.appendChild(deleteButton);
+    ul.appendChild(divElement);
   }
 };
 
-const countStore = createStore(countModifier);
+toDoStore.subscribe(paintToDo);
 
-// html에게 뭔가 바뀌었다고 알려주기 위해 함수를 쓴다는것 자체가 리덕스를 쓰는 이유중 하나다.
-const onChange = () => {
-  number.innerText = countStore.getState();
+const onSubmit = (e) => {
+  e.preventDefault();
+
+  addToDo();
+  input.value = "";
 };
 
-// html에게 뭔가 바뀌었다고 알려주기 위해 함수를 쓴다는것 자체가 리덕스를 쓰는 이유중 하나다.
-countStore.subscribe(onChange);
-
-const handleAdd = () => {
-  countStore.dispatch({ type: ADD });
-};
-
-const handleMinus = () => {
-  countStore.dispatch({ type: MINUS });
-};
-
-add.addEventListener("click", handleAdd);
-minus.addEventListener("click", handleMinus);
-
-
-
+form.addEventListener("submit", onSubmit);
